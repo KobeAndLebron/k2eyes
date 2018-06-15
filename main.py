@@ -30,32 +30,56 @@ def search(condition,starttime,endtime):
 def judge_result(results):
 
     host_list = read_excel.get_host("/Users/k2data/Desktop/env.xlsx")
-    mes_list = read_excel.get_measurement("/Users/k2data/Desktop/env.xlsx")
+    mes = read_excel.get_measurement("/Users/k2data/Desktop/env.xlsx")
     for l in range(0,len(host_list)):
-        for m in rang(0,len(mes_list)):
+        mes_list = mes.get(host_list[l])
+        for m in range(0,len(mes_list)):
             n = 0
             w = 0
             u = 0
-            warning,unusual = read_excel.get_threshold("/Users/k2data/Desktop/env.xlsx").get(mes_list[m])
-            value = results.get(host_list(l)).get(mes_list[m])
-            if value < warning & value is not None:
+
+            warning_n = read_excel.get_threshold("/Users/k2data/Desktop/env.xlsx").get(mes_list[m])[0]
+            unusual_n = read_excel.get_threshold("/Users/k2data/Desktop/env.xlsx").get(mes_list[m])[1]
+            if result.get(host_list[l]).get(mes_list[m]) is not None:
+                value = results.get(host_list[l]).get(mes_list[m])[0].get('value')
+            else:
+                value = None
+            if value < warning_n and value is not None:
                 n += 1
-            if value >= warning & value < u:
+            if value >= warning_n and value < unusual_n:
                 w += 1
-            if value >= u & value is None:
+            if value >= unusual_n and value is None:
                 u += 1
         if u != 0:
+            global unusual
             unusual += 1
         if u == 0 & w != 0:
+            global warning
             warning += 1
         else:
+            global normal
             normal += 1
+    return
+def insert():
+    end_table = {"normal": normal, "warning": warning, "unusual": unusual}
+    for table, len_table in end_table.items():
+        insert_sql = [{
+            "measurement": table,
+            "tags": {"status": table},
+            "fields": {"value": len_table * 1.0},
+            "time": stop_time}]
+        print insert_sql
+        client.write_points(insert_sql)
+    return
 if __name__ == '__main__':
 
     start_time = int((int(time.time()) - 60 * 1000) * 10 ** 9)
     stop_time = int(int(time.time()) * 10 ** 9)
-    search(read_excel.get_env("/Users/k2data/Desktop/env.xlsx"),start_time,stop_time)
-
+    result = search(read_excel.get_env("/Users/k2data/Desktop/env.xlsx"),start_time,stop_time)
+    judge_result(result)
+    print normal
+    print warning
+    print unusual
 
 
 
